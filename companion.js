@@ -264,6 +264,10 @@ class CompanionService {
             return this.parseAndAddTask(text);
         }
 
+        if (/^(?:i (?:have |just )?(?:finished|completed|done)|mark(?: task)?|completed?|finished?|done) /i.test(lower)) {
+            return this.parseAndCompleteTask(text);
+        }
+
         if (/^(?:my |pending |show |list |all )?tasks$|what.?s pending|show (?:my )?tasks|list (?:my )?tasks/i.test(lower)) {
             return this.getTasksFormatted();
         }
@@ -341,6 +345,52 @@ class CompanionService {
 
         this.touchInteraction();
         return this.addTask(taskText, time);
+    }
+
+    parseAndCompleteTask(text) {
+        let taskText = text.toLowerCase().trim();
+
+        // Strip completion prefixes and suffixes
+        taskText = taskText.replace(
+            /^(?:i (?:have |just )?(?:finished|completed|done)(?: with)?|mark(?: task)?|completed?|finished?|done(?: with)?)\s+/i,
+            ''
+        ).replace(/\s+(?:as done|off|as complete|as finished)$/i, '').trim();
+
+        // If it's just a number, complete by index
+        const maybeIndex = parseInt(taskText);
+        if (!isNaN(maybeIndex) && maybeIndex.toString() === taskText) {
+            return this.completeTask(maybeIndex - 1); // User means 1-index
+        }
+
+        const pending = this.getPendingTasks();
+        if (pending.length === 0) {
+            return "You don't have any pending tasks right now! 🎉";
+        }
+
+        // Fuzzy match word overlaps
+        let bestMatchIndex = null;
+        let highestScore = 0;
+
+        for (let i = 0; i < pending.length; i++) {
+            const task = pending[i];
+            const titleWords = task.text.toLowerCase().split(/[\s\/_-]+/);
+            let score = 0;
+            for (const word of taskText.split(/[\s\/_-]+/)) {
+                if (word.length >= 3 && titleWords.some(w => w.includes(word))) {
+                    score++;
+                }
+            }
+            if (score > highestScore) {
+                highestScore = score;
+                bestMatchIndex = this.routine.tasks.indexOf(task);
+            }
+        }
+
+        if (bestMatchIndex !== null && highestScore >= 1) {
+            return this.completeTask(bestMatchIndex);
+        }
+
+        return `❌ I couldn't find a task matching "${taskText}". Use /tasks to see the list, or reply "/done <number>".`;
     }
 
     handleShortReply(lower) {
