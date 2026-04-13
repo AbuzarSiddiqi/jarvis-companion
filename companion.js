@@ -238,6 +238,23 @@ class CompanionService {
     handleFreeformChat(text) {
         const lower = text.toLowerCase().trim();
 
+        // Greetings (don't log as activity)
+        if (/^(hi|hello|hey|yo|sup|morning|good morning|afternoon|evening|hola) *(!|\.)?$/i.test(lower)) {
+            const name = this.routine.companion?.friendlyName || 'there';
+            const responses = [
+                `Hey ${name}! 👋 What are you working on?`,
+                `Hello! How's the day going?`,
+                `Yo! Anything I can help with right now?`
+            ];
+            return responses[Math.floor(Math.random() * responses.length)];
+        }
+
+        // Simple affirmations / acknowledgments (don't log as activity)
+        if (/^(ok|cool|nice|got it|thanks|thank you|yep|yeah|alright) *(!|\.)?$/i.test(lower)) {
+            const responses = [`No problem! 👍`, `You got it! ✨`, `Awesome!`, `Keep it up! 🚀`];
+            return responses[Math.floor(Math.random() * responses.length)];
+        }
+
         if (/what (?:should|to|can|do) (?:i |we )?do|according to (?:my )?routine|my schedule|what.?s next|what now/i.test(lower)) {
             return this.suggestBasedOnRoutine();
         }
