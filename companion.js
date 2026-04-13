@@ -5,10 +5,26 @@ const path = require('path');
  * Jarvis Cloud Companion
  * Lightweight companion service that runs on a cloud server 24/7.
  * Handles check-ins, tasks, routine, reminders — no macOS needed.
+ * Syncs with local Mac app via JSONBin when JSONBIN_KEY is set.
  */
 
 const DATA_DIR = path.join(__dirname, 'data');
 const ROUTINE_FILE = path.join(__dirname, 'routine.json');
+
+// Cloud sync (optional — works without it too)
+let sync = null;
+try {
+    sync = require('./sync');
+    if (process.env.JSONBIN_KEY) {
+        sync.masterKey = process.env.JSONBIN_KEY;
+        if (process.env.JSONBIN_BIN_ID) sync.setBinId(process.env.JSONBIN_BIN_ID);
+        console.log('[Companion] JSONBin sync enabled ✅');
+    } else {
+        sync = null;
+    }
+} catch (e) {
+    sync = null;
+}
 
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -42,12 +58,15 @@ class CompanionService {
 
     // ─── INIT ──────────────────────────────────────────────────────────────
 
-    init(bot, chatId) {
+    async init(bot, chatId) {
         this.bot = bot;
         this.chatId = chatId;
         this.routine = this.loadRoutine();
 
         console.log('[Companion] Initializing cloud companion...');
+
+        // Pull latest data from JSONBin first (may override local routine.json)
+        await this.syncFromCloud();
 
         this.scheduleCheckIns();
         this.scheduleReminders();
@@ -56,6 +75,9 @@ class CompanionService {
 
         // Reschedule everything at midnight
         this.scheduleMidnightReset();
+
+        // Sync from cloud every 5 minutes to pick up Mac app changes
+        setInterval(() => this.syncFromCloud(), 5 * 60 * 1000);
 
         console.log('[Companion] Cloud companion ready!');
     }
@@ -96,6 +118,34 @@ class CompanionService {
 
     refreshRoutine() {
         this.routine = this.loadRoutine();
+    }
+
+    /** Pull latest data from JSONBin into local routine.json */
+    async syncFromCloud() {
+        if (!sync || !sync.isConfigured()) return;
+        try {
+            const data = await sync.read();
+            if (data && data.routine) {
+                // Merge tasks/reminders from cloud into routine
+                const merged = { ...data.routine, tasks: data.tasks || data.routine.tasks || [], reminders: data.routine.reminders || [] };
+                fs.writeFileSync(ROUTINE_FILE, JSON.stringify(merged, null, 2));
+                this.routine = merged;
+                console.log('[Sync] Pulled latest from JSONBin');
+            }
+        } catch (e) {
+            console.warn('[Sync] Pull failed (using local):', e.message);
+        }
+    }
+
+    /** Push current routine+tasks to JSONBin */
+    async pushToCloud() {
+        if (!sync || !sync.isConfigured()) return;
+        try {
+            await sync.update({ routine: this.routine, tasks: this.routine.tasks || [], lastUpdated: new Date().toISOString() });
+            console.log('[Sync] Pushed to JSONBin');
+        } catch (e) {
+            console.warn('[Sync] Push failed:', e.message);
+        }
     }
 
     getTodayRoutine() {
@@ -768,6 +818,8 @@ class CompanionService {
     saveRoutine() {
         try {
             fs.writeFileSync(ROUTINE_FILE, JSON.stringify(this.routine, null, 2));
+            // Push to JSONBin so Mac app picks it up
+            this.pushToCloud().catch(() => {});
         } catch (e) {
             console.error('[Companion] Save failed:', e.message);
         }
