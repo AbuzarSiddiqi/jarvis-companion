@@ -1,0 +1,6 @@
+# Jarvis Cloud Companion
+
+node_modules/
+data/
+*.log
+.env

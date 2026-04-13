@@ -1,0 +1,107 @@
+{
+  "weeklyRoutine": {
+    "monday": [
+      {
+        "time": "07:00",
+        "activity": "Wake up & Fresh up",
+        "category": "health"
+      },
+      {
+        "time": "07:30",
+        "activity": "Morning workout / Exercise",
+        "category": "fitness"
+      },
+      {
+        "time": "08:30",
+        "activity": "Breakfast",
+        "category": "meals"
+      },
+      {
+        "time": "09:00",
+        "activity": "Study / College work",
+        "category": "study"
+      },
+      {
+        "time": "11:00",
+        "activity": "Short break / Snack",
+        "category": "break"
+      },
+      {
+        "time": "11:15",
+        "activity": "Continue Study / Assignments",
+        "category": "study"
+      },
+      {
+        "time": "13:00",
+        "activity": "Lunch",
+        "category": "meals"
+      },
+      {
+        "time": "14:00",
+        "activity": "Project work / Coding",
+        "category": "work"
+      },
+      {
+        "time": "16:30",
+        "activity": "Tea / Snack break",
+        "category": "break"
+      },
+      {
+        "time": "17:00",
+        "activity": "Exercise / Evening walk",
+        "category": "fitness"
+      },
+      {
+        "time": "18:00",
+        "activity": "Free time / Hobbies",
+        "category": "leisure"
+      },
+      {
+        "time": "19:30",
+        "activity": "Dinner",
+        "category": "meals"
+      },
+      {
+        "time": "20:30",
+        "activity": "Entertainment / Social Media",
+        "category": "leisure"
+      },
+      {
+        "time": "22:00",
+        "activity": "Wind down / Reading",
+        "category": "health"
+      },
+      {
+        "time": "23:00",
+        "activity": "Sleep",
+        "category": "health"
+      }
+    ],
+    "tuesday": [],
+    "wednesday": [],
+    "thursday": [],
+    "friday": [],
+    "saturday": [],
+    "sunday": []
+  },
+  "copyMondayToAll": true,
+  "reminders": [],
+  "tasks": [
+    {
+      "text": "do homeweorkd",
+      "time": null,
+      "completed": false,
+      "createdAt": 1775389272491
+    }
+  ],
+  "companion": {
+    "enabled": true,
+    "friendlyName": "Abuzar",
+    "checkInsPerDay": 6,
+    "firstCheckIn": "08:00",
+    "lastCheckIn": "22:00",
+    "summaryTime": "22:30",
+    "personality": "friendly",
+    "language": "english"
+  }
+}

@@ -1,0 +1,16 @@
+services:
+  - type: worker
+    name: jarvis-companion
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+      - key: CHAT_ID
+        sync: false
+      - key: FRIENDLY_NAME
+        value: Abuzar
+      - key: TZ
+        value: Asia/Kolkata
