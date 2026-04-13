@@ -80,9 +80,11 @@ bot.on('polling_error', (error) => {
 const sync = (() => {
     try {
         const s = require('./sync');
-        if (process.env.JSONBIN_KEY) {
-            s.masterKey = process.env.JSONBIN_KEY;
-            if (process.env.JSONBIN_BIN_ID) s.setBinId(process.env.JSONBIN_BIN_ID);
+        const key = process.env.JSONBIN_KEY || '$2a$10$c1XaOU8PfV4yzdRNsyND9OmzxVIHbumHR54k/gjx9Ql97Dtl9H5W6';
+        const binId = process.env.JSONBIN_BIN_ID || '69dc7c07856a68218929babc';
+        if (key) {
+            s.masterKey = key;
+            s.setBinId(binId);
             return s;
         }
     } catch (e) {}

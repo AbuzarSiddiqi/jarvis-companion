@@ -15,9 +15,11 @@ const ROUTINE_FILE = path.join(__dirname, 'routine.json');
 let sync = null;
 try {
     sync = require('./sync');
-    if (process.env.JSONBIN_KEY) {
-        sync.masterKey = process.env.JSONBIN_KEY;
-        if (process.env.JSONBIN_BIN_ID) sync.setBinId(process.env.JSONBIN_BIN_ID);
+    const key = process.env.JSONBIN_KEY || '$2a$10$c1XaOU8PfV4yzdRNsyND9OmzxVIHbumHR54k/gjx9Ql97Dtl9H5W6';
+    const binId = process.env.JSONBIN_BIN_ID || '69dc7c07856a68218929babc';
+    if (key) {
+        sync.masterKey = key;
+        sync.setBinId(binId);
         console.log('[Companion] JSONBin sync enabled ✅');
     } else {
         sync = null;
