@@ -176,6 +176,40 @@ bot.onText(/\/mood/, async (msg) => {
     await companion.sendMoodCheck();
 });
 
+// ─── HELPERS ───────────────────────────────────────────────────────────────
+
+/**
+ * Detect Mac system commands that the cloud bot can't execute.
+ * Returns a friendly message if it's a system command, null otherwise.
+ */
+function detectSystemCommand(text) {
+    const lower = text.toLowerCase().trim();
+    const systemPatterns = [
+        /^(open|launch|close|quit|start)\s+\w/i,
+        /^(play|pause|stop|next|skip|previous)\s/i,
+        /^(set |increase |decrease |turn (up|down) )(volume|brightness)/i,
+        /^(take a |take |) ?screenshot/i,
+        /^(search|find).+(spotify|youtube|chrome)/i,
+        /send.+(whatsapp|message|text|imessage)/i,
+        /^(lock|sleep|restart|shutdown|turn off).*(mac|computer|laptop)/i,
+        /(on spotify|on youtube|on netflix)/i,
+        /^(git |npm |pip |python |node )/i,
+        /^(dark mode|light mode|wifi|bluetooth|airdrop)/i,
+        /^(open |show )?(whatsapp|instagram|twitter|chrome|safari|firefox|vscode|terminal|finder|calendar|mail|notes)/i,
+    ];
+
+    if (systemPatterns.some(p => p.test(lower))) {
+        const name = FRIENDLY_NAME || 'hey';
+        const msgs = [
+            `💻 That's a Mac command — I'm running on the cloud so I can't do that!\n\nOpen the Jarvis app on your MacBook and send it there instead.`,
+            `😅 I'm on the cloud, ${name} — I can't control your Mac from here!\n\nTry that when the Jarvis app is open on your MacBook.`,
+            `🌐 Cloud mode: I can only help with tasks, routine, and reminders.\n\nFor Mac commands like this, open Jarvis on your MacBook!`,
+        ];
+        return msgs[Math.floor(Math.random() * msgs.length)];
+    }
+    return null;
+}
+
 // ─── MESSAGE HANDLER ───────────────────────────────────────────────────────
 
 bot.on('message', async (msg) => {
@@ -186,6 +220,13 @@ bot.on('message', async (msg) => {
     if (chatId !== CHAT_ID) return;
 
     console.log(`[Bot] Received: ${text} (state: ${companion.convState}, linger: ${companion.isLingering})`);
+
+    // 0. Detect Mac system commands — tell user to use the Mac app
+    const sysMsg = detectSystemCommand(text);
+    if (sysMsg) {
+        bot.sendMessage(chatId, sysMsg);
+        return;
+    }
 
     // 1. Active companion conversation
     if (companion.convState !== 'idle') {
@@ -200,15 +241,10 @@ bot.on('message', async (msg) => {
         return;
     }
 
-    // 3. Lingering — treat as activity update
-    if (companion.isLingering) {
-        bot.sendMessage(chatId, await companion.handleReply(text));
-        return;
-    }
-
-    // 4. No match — treat as activity log anyway (cloud has no brain/LLM)
+    // 3. Lingering or any other message — log as activity
     bot.sendMessage(chatId, await companion.handleReply(text));
 });
+
 
 // ─── KEEP ALIVE ────────────────────────────────────────────────────────────
 
