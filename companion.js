@@ -240,11 +240,12 @@ class CompanionService {
             return this.suggestBasedOnRoutine();
         }
 
-        if (/^(?:add (?:a )?task|remind me|i (?:need|have|want|got) to)/i.test(lower)) {
+        // Catches: "add a task", "add task", "add to task", "add to my tasks", "remind me", "i need to"
+        if (/^(?:add (?:a |to |to my )?task|remind me|i (?:need|have|want|got) to)/i.test(lower)) {
             return this.parseAndAddTask(text);
         }
 
-        if (/(?:my |pending |show |list )?tasks|what.?s pending/i.test(lower)) {
+        if (/^(?:my |pending |show |list |all )?tasks$|what.?s pending|show (?:my )?tasks|list (?:my )?tasks/i.test(lower)) {
             return this.getTasksFormatted();
         }
 
@@ -507,9 +508,17 @@ class CompanionService {
 
     async handleReply(text) {
         this.touchInteraction();
+        const name = this.routine.companion?.friendlyName || 'hey';
+
+        // Always check freeform commands first — even during conversation states
+        // This ensures "tasks", "add task", "routine" always work regardless of state
+        const freeform = this.handleFreeformChat(text);
+        if (freeform !== null) {
+            return freeform;
+        }
+
         const logResult = this.logActivity(text);
         const comparison = this.getRoutineComparison(text);
-        const name = this.routine.companion?.friendlyName || 'hey';
 
         let response = '';
 
