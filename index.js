@@ -66,10 +66,52 @@ console.log('━━━━━━━━━━━━━━━━━━━━━━�
 console.log('');
 
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
+let isPaused = false;
 
 bot.on('polling_error', (error) => {
     console.error('[Bot] Polling error:', error.message);
 });
+
+// ─── MAC HANDOFF ───────────────────────────────────────────────────────────
+// Every 30s, check if the Mac Jarvis app is active.
+// If yes → pause cloud polling (Mac handles Telegram with system commands).
+// If no  → resume cloud polling (back to 24/7 mode).
+
+const sync = (() => {
+    try {
+        const s = require('./sync');
+        if (process.env.JSONBIN_KEY) {
+            s.masterKey = process.env.JSONBIN_KEY;
+            if (process.env.JSONBIN_BIN_ID) s.setBinId(process.env.JSONBIN_BIN_ID);
+            return s;
+        }
+    } catch (e) {}
+    return null;
+})();
+
+async function checkMacHandoff() {
+    if (!sync || !sync.isConfigured()) return;
+    try {
+        const data = await sync.read();
+        const macActive = data?.macActive && data?.macActiveUntil > Date.now();
+
+        if (macActive && !isPaused) {
+            console.log('[Bot] Mac app is active — pausing cloud polling. Mac handles Telegram.');
+            bot.stopPolling();
+            isPaused = true;
+        } else if (!macActive && isPaused) {
+            console.log('[Bot] Mac app closed — resuming cloud polling.');
+            bot.startPolling();
+            isPaused = false;
+        }
+    } catch (e) {
+        // Can't reach JSONBin — stay in current state
+    }
+}
+
+// Check immediately and then every 30 seconds
+checkMacHandoff();
+setInterval(checkMacHandoff, 30 * 1000);
 
 // Initialize companion if we have a chat ID
 if (CHAT_ID) {
